@@ -178,8 +178,17 @@ def is_clean(repo: Path) -> bool:
 
 
 def scratch_root(repo: Path) -> Path:
-    """Writable scratch directory on the same drive as ``repo``."""
-    root = Path(f"{repo.drive or 'B:'}\\") / "safi-rca-tmp"
+    """Writable scratch directory on the same filesystem as ``repo``.
+
+    On Windows the scratch lives at the drive root (``B:\\safi-rca-tmp``).  A
+    POSIX path has no drive, so anchoring on the parent of the repository keeps
+    the export on the same volume as the checkout without writing to ``/``.
+    """
+    if repo.drive:
+        base = Path(f"{repo.drive}\\")
+    else:
+        base = repo.resolve().parent
+    root = base / "safi-rca-tmp"
     root.mkdir(parents=True, exist_ok=True)
     return root
 
