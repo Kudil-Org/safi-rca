@@ -70,6 +70,22 @@ LLM_ENV_KEYS = (
 DEFAULT_MODEL = "anthropic/claude-sonnet-4-5"
 
 
+def _capability_overrides(model: str) -> dict[str, bool | str]:
+    """Override model capabilities the SDK cannot infer correctly.
+
+    The OpenHands SDK asks LiteLLM whether a model supports ``prompt_cache_key``
+    and only sends the parameter when the answer is yes.  LiteLLM reports the
+    parameter as supported for Groq, but the Groq API rejects it with
+    ``property 'prompt_cache_key' is unsupported`` -- so a Groq run fails before
+    the model is ever asked.  Deny the capability for ``groq/`` models; every
+    other provider keeps the SDK's own resolution.
+    """
+
+    if model.strip().lower().startswith("groq/"):
+        return {"supports_prompt_cache_key": False}
+    return {}
+
+
 @dataclass
 class _Backend:
     """Resolved SDK entry points."""
@@ -334,6 +350,7 @@ def build_read_only_agent(backend: _Backend, model: str, api_key: str):
             api_key=api_key,
             retry_max_wait=RETRY_MAX_WAIT_SECONDS,
             max_output_tokens=max_output_tokens(),
+            capability_overrides=_capability_overrides(model),
         ),
         tools=[],
         enable_switch_llm_tool=False,
