@@ -1,0 +1,7 @@
+# The fixture mirrors under fixtures/origin are bare git repositories stored
+# in-tree. Treat every byte inside them as binary so that core.autocrlf never
+# rewrites line endings on checkout: a stray CR turns a ref into
+# "refs/heads/main\r", which git reports as a "funny ref" and then reads as an
+# empty repository. The blobs are committed as LF, so Linux cloners are fine
+# either way; this keeps Windows checkouts byte-faithful too.
+fixtures/origin/** -text
